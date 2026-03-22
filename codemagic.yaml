@@ -43,7 +43,11 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
-          xcode-project use-profiles --export-options-plist=/Users/builder/export_options.plist
+          # Debug: verify profiles were applied
+          echo "=== Installed provisioning profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles directory"
+          echo "=== Checking project signing settings ==="
+          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM" || true
       - name: Build iOS release
         script: |
           flutter build ios --release \
