@@ -43,19 +43,72 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
-          # Debug: verify profiles were applied
-          echo "=== Installed provisioning profiles ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles directory"
-          echo "=== Checking project signing settings ==="
-          xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -showBuildSettings | grep -E "CODE_SIGN|PROVISIONING|DEVELOPMENT_TEAM" || true
+
+          # Verify profiles were fetched
+          echo "=== Provisioning profiles ==="
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          ls "$PROFILES_DIR"/*.mobileprovision 2>/dev/null || {
+            echo "ERROR: No provisioning profiles were fetched!"
+            echo "Check that your App Store Connect API key has sufficient permissions"
+            echo "and that bundle ID '$BUNDLE_ID' is registered in Apple Developer portal."
+            exit 1
+          }
+
+          # Extract team ID and profile UUID from the fetched profile
+          PROFILE_PATH=$(ls "$PROFILES_DIR"/*.mobileprovision | head -1)
+          TEAM_ID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract TeamIdentifier.0 raw -)
+          PROFILE_UUID=$(security cms -D -i "$PROFILE_PATH" | plutil -extract UUID raw -)
+          PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          echo "Team ID: $TEAM_ID"
+          echo "Profile UUID: $PROFILE_UUID"
+          echo "Profile Name: $PROFILE_NAME"
+
+          # Export for use in build step
+          echo "TEAM_ID=$TEAM_ID" >> $CM_ENV
+          echo "PROFILE_UUID=$PROFILE_UUID" >> $CM_ENV
+          echo "PROFILE_NAME=$PROFILE_NAME" >> $CM_ENV
+
+          # Generate export options plist
+          cat > /Users/builder/export_options.plist << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store</string>
+              <key>teamID</key>
+              <string>$TEAM_ID</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>$BUNDLE_ID</key>
+                  <string>$PROFILE_NAME</string>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
       - name: Build iOS release
         script: |
           flutter build ios --release \
             --no-codesign \
             --build-number=$PROJECT_BUILD_NUMBER
-          xcode-project build-ipa \
-            --workspace ios/Runner.xcworkspace \
-            --scheme Runner
+
+          # Archive with explicit signing settings
+          xcodebuild -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -archivePath build/ios/Runner.xcarchive \
+            archive \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            PROVISIONING_PROFILE="$PROFILE_UUID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="iPhone Distribution"
+
+          # Export IPA
+          xcodebuild -exportArchive \
+            -archivePath build/ios/Runner.xcarchive \
+            -exportOptionsPlist /Users/builder/export_options.plist \
+            -exportPath build/ios/ipa
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
