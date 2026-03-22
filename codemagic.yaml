@@ -38,9 +38,20 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+
+          # Fetch signing files with verbose output to diagnose failures
+          echo "=== Fetching signing files for $BUNDLE_ID ==="
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --verbose 2>&1 || echo "fetch-signing-files exit code: $?"
+
+          # List what was actually downloaded
+          echo "=== Certificates downloaded ==="
+          ls -la ~/Library/MobileDevice/Certificates/*.p12 2>/dev/null || echo "No .p12 certificates found"
+          echo "=== Profiles downloaded ==="
+          ls -la ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null || echo "No provisioning profiles found"
+
           keychain add-certificates
           xcode-project use-profiles
 
