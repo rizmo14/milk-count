@@ -163,9 +163,9 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
                           horizontal: 14, vertical: 8),
                       color: _amountMl == ml.toDouble()
                           ? const Color(0xFF5B9BD5)
-                          : const Color(0xFF5B9BD5).withOpacity(0.1),
+                          : const Color(0xFF5B9BD5).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
-                      minSize: 0,
+                      minimumSize: 0,
                       onPressed: () =>
                           setState(() => _amountMl = ml.toDouble()),
                       child: Text(

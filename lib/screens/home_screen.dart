@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFF6B9D).withOpacity(0.3),
+            color: const Color(0xFFFF6B9D).withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -108,7 +108,7 @@ class HomeScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: CupertinoColors.white.withOpacity(0.25),
+              color: CupertinoColors.white.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -140,7 +140,7 @@ class HomeScreen extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: CupertinoColors.white.withOpacity(0.85),
+            color: CupertinoColors.white.withValues(alpha: 0.85),
             fontSize: 13,
           ),
         ),
@@ -195,7 +195,7 @@ class HomeScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -206,7 +206,7 @@ class HomeScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 28),
@@ -290,8 +290,8 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isBottle
-                  ? const Color(0xFF5B9BD5).withOpacity(0.1)
-                  : const Color(0xFFFF6B9D).withOpacity(0.1),
+                  ? const Color(0xFF5B9BD5).withValues(alpha: 0.1)
+                  : const Color(0xFFFF6B9D).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

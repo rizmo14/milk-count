@@ -27,7 +27,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('EEE, MMM d');
     final timeFormat = DateFormat('h:mm a');
-    final isToday = DateUtils.isSameDay(_selectedDate, DateTime.now());
+    final now = DateTime.now();
+    final isToday = _selectedDate.year == now.year &&
+        _selectedDate.month == now.month &&
+        _selectedDate.day == now.day;
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -147,9 +150,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                     decoration: BoxDecoration(
                                       color: isBottle
                                           ? const Color(0xFF5B9BD5)
-                                              .withOpacity(0.1)
+                                              .withValues(alpha: 0.1)
                                           : const Color(0xFFFF6B9D)
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
