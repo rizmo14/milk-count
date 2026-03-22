@@ -1,14 +1,20 @@
 workflows:
   ios-release:
-    name: iOS Build
+    name: iOS Release - TestFlight
     max_build_duration: 60
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.milkcount.app
       vars:
         BUNDLE_ID: "com.milkcount.app"
+        APP_STORE_APPLE_ID: "REPLACE_WITH_YOUR_APPLE_ID"
     cache:
       cache_paths:
         - $FLUTTER_ROOT/.pub-cache
@@ -32,14 +38,24 @@ workflows:
       - name: Flutter unit tests
         script: |
           flutter test
-      - name: Build iOS (debug, no codesign)
+      - name: Set up code signing
         script: |
-          flutter build ios --debug --no-codesign
+          keychain initialize
+      - name: Build iOS release
+        script: |
+          flutter build ipa --release \
+            --build-number=$PROJECT_BUILD_NUMBER \
+            --export-options-plist=/Users/builder/export_options.plist
     artifacts:
-      - build/ios/iphoneos/*.app
+      - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal Testers
       email:
         recipients:
           - gpdirectorau@gmail.com
