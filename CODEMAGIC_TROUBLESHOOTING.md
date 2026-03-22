@@ -60,7 +60,33 @@
 
 ---
 
-## Issue 3: Wrong integration name
+## Issue 3: "No valid code signing certificates" even after signing step passes
+
+**Error**: "Set up code signing" step succeeds, but "Build iOS release" fails with:
+```
+No valid code signing certificates were found
+No development certificates available to code sign app for device deployment
+```
+
+**Cause**: `flutter build ipa --export-options-plist=...` still tries to resolve signing during the Xcode build phase *before* applying the export options. The export plist only controls the *export* step, not the *archive* step.
+
+**Fix**: Split the build into two steps — use `flutter build ios` (which builds the archive using profiles set by `xcode-project use-profiles`) then use Codemagic's `xcode-project build-ipa` to package and sign:
+
+```yaml
+- name: Build iOS release
+  script: |
+    flutter build ios --release \
+      --build-number=$PROJECT_BUILD_NUMBER
+    xcode-project build-ipa \
+      --workspace ios/Runner.xcworkspace \
+      --scheme Runner
+```
+
+**Why this works**: `xcode-project use-profiles` (from the signing step) configures the Xcode project's signing settings. `flutter build ios` respects those settings. Then `xcode-project build-ipa` handles archiving and exporting with the correct distribution profile.
+
+---
+
+## Issue 4: Wrong integration name
 
 **Error**: Build fails because the App Store Connect integration name in `codemagic.yaml` doesn't match what's configured in Codemagic.
 
@@ -122,7 +148,9 @@ workflows:
           xcode-project use-profiles --export-options-plist=/Users/builder/export_options.plist
       - name: Build iOS release
         script: |
-          flutter build ipa --release \
-            --build-number=$PROJECT_BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+          flutter build ios --release \
+            --build-number=$PROJECT_BUILD_NUMBER
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner
 ```

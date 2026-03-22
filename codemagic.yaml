@@ -46,9 +46,11 @@ workflows:
           xcode-project use-profiles --export-options-plist=/Users/builder/export_options.plist
       - name: Build iOS release
         script: |
-          flutter build ipa --release \
-            --build-number=$PROJECT_BUILD_NUMBER \
-            --export-options-plist=/Users/builder/export_options.plist
+          flutter build ios --release \
+            --build-number=$PROJECT_BUILD_NUMBER
+          xcode-project build-ipa \
+            --workspace ios/Runner.xcworkspace \
+            --scheme Runner
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
