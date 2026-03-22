@@ -70,19 +70,22 @@ No development certificates available to code sign app for device deployment
 
 **Cause**: `flutter build ipa --export-options-plist=...` still tries to resolve signing during the Xcode build phase *before* applying the export options. The export plist only controls the *export* step, not the *archive* step.
 
-**Fix**: Split the build into two steps — use `flutter build ios` (which builds the archive using profiles set by `xcode-project use-profiles`) then use Codemagic's `xcode-project build-ipa` to package and sign:
+**Fix**: Split the build into two steps — use `flutter build ios --no-codesign` (compile only, skip signing) then use Codemagic's `xcode-project build-ipa` to archive, sign, and export:
 
 ```yaml
 - name: Build iOS release
   script: |
     flutter build ios --release \
+      --no-codesign \
       --build-number=$PROJECT_BUILD_NUMBER
     xcode-project build-ipa \
       --workspace ios/Runner.xcworkspace \
       --scheme Runner
 ```
 
-**Why this works**: `xcode-project use-profiles` (from the signing step) configures the Xcode project's signing settings. `flutter build ios` respects those settings. Then `xcode-project build-ipa` handles archiving and exporting with the correct distribution profile.
+**Why this works**: `flutter build ios --no-codesign` compiles the app without trying to sign (avoids the "no certificates" error). Then `xcode-project build-ipa` does the actual archiving with `CODE_SIGN_STYLE=Manual` using the profiles that `xcode-project use-profiles` configured in the signing step.
+
+**Key insight**: `flutter build ios` (without `--no-codesign`) will still try to sign during compilation and fail if it can't find certificates directly — even if `use-profiles` ran. The `--no-codesign` flag is essential.
 
 ---
 
@@ -149,6 +152,7 @@ workflows:
       - name: Build iOS release
         script: |
           flutter build ios --release \
+            --no-codesign \
             --build-number=$PROJECT_BUILD_NUMBER
           xcode-project build-ipa \
             --workspace ios/Runner.xcworkspace \
