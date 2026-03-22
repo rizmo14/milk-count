@@ -1,20 +1,14 @@
 workflows:
   ios-release:
-    name: iOS Release to TestFlight
+    name: iOS Build
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.milkcount.app
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - app_store_credentials  # Add your App Store Connect API key here
       vars:
         BUNDLE_ID: "com.milkcount.app"
-        APP_STORE_APPLE_ID: "YOUR_APP_APPLE_ID"  # Replace after first upload
     cache:
       cache_paths:
         - $FLUTTER_ROOT/.pub-cache
@@ -29,9 +23,6 @@ workflows:
         - pattern: 'release/*'
           include: true
     scripts:
-      - name: Set up code signing settings on Xcode project
-        script: |
-          xcode-project use-profiles
       - name: Get Flutter packages
         script: |
           flutter packages pub get
@@ -41,23 +32,20 @@ workflows:
       - name: Flutter unit tests
         script: |
           flutter test
-      - name: Build iOS IPA
+      - name: Build iOS (debug, no codesign)
         script: |
-          flutter build ipa --release \
-            --build-name=1.0.0 \
-            --build-number=$(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID") + 1)) \
-            --export-options-plist=/Users/builder/export_options.plist
+          flutter build ios --debug --no-codesign
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.app
       - /tmp/xcodebuild_logs/*.log
       - flutter_drive.log
     publishing:
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        beta_groups:
-          - Internal Testers
-        submit_to_app_store: false
+      email:
+        recipients:
+          - gpdirectorau@gmail.com
+        notify:
+          success: true
+          failure: true
 
   ios-debug:
     name: iOS Debug Build (PR checks)
