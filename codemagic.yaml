@@ -43,6 +43,7 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
+          xcode-project use-profiles --export-options-plist=/Users/builder/export_options.plist
       - name: Build iOS release
         script: |
           flutter build ipa --release \
